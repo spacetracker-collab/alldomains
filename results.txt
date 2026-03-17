@@ -1,0 +1,9 @@
+Final conclusion (important)
+
+Your numbers show:
+
+The system did not just compute outputs — it constructed an internal model of the domain and acted based on it.
+
+🎯 One-line interpretation
+
+Nodes with similar graph roles converge to similar activation vectors, and actions are simply bounded expressions of those internal states.
