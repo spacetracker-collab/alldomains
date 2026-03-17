@@ -1,6 +1,6 @@
 # ==========================================
 
-# AI META-FIELD DEMO (Single File)
+# AI META-FIELD DEMO (FINAL CLEAN VERSION)
 
 # ==========================================
 
@@ -8,123 +8,116 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-# -----------------------------
-
-# 1. Graph Definition
-
-# -----------------------------
-
-# Number of nodes
-
+def build_graph():
+"""
+Creates adjacency matrix and normalized adjacency
+"""
 n = 5
 
-# Adjacency matrix (graph structure)
-
+```
 A = torch.tensor([
-[1,1,0,0,0],
-[1,1,1,0,0],
-[0,1,1,1,0],
-[0,0,1,1,1],
-[0,0,0,1,1]
+    [1, 1, 0, 0, 0],
+    [1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 0],
+    [0, 0, 1, 1, 1],
+    [0, 0, 0, 1, 1]
 ], dtype=torch.float32)
 
-# Feature matrix (node features)
+# Add self loops
+A = A + torch.eye(n)
 
-d = 3
-X = torch.randn(n, d)
+# Degree matrix
+D = torch.diag(torch.sum(A, dim=1))
 
-# -----------------------------
+# D^{-1/2}
+D_inv_sqrt = torch.linalg.inv(torch.sqrt(D))
 
-# 2. Graph Neural Network
+# Normalized adjacency
+A_norm = D_inv_sqrt @ A @ D_inv_sqrt
 
-# -----------------------------
+return A_norm, n
+```
 
 class GCN(nn.Module):
 def **init**(self, in_dim, hidden_dim, out_dim):
 super(GCN, self).**init**()
-self.W1 = nn.Linear(in_dim, hidden_dim)
-self.W2 = nn.Linear(hidden_dim, out_dim)
+self.fc1 = nn.Linear(in_dim, hidden_dim)
+self.fc2 = nn.Linear(hidden_dim, out_dim)
 
 ```
 def forward(self, X, A):
-    # Layer 1
-    H = torch.matmul(A, X)
-    H = self.W1(H)
+    H = A @ X
+    H = self.fc1(H)
     H = torch.relu(H)
 
-    # Layer 2
-    H = torch.matmul(A, H)
-    H = self.W2(H)
+    H = A @ H
+    H = self.fc2(H)
 
     return H
 ```
 
-# -----------------------------
+def action_mapping(activations):
+"""
+Maps neural activations to observable actions
+"""
+return torch.tanh(activations)
 
-# 3. Model Setup
+def main():
+torch.manual_seed(42)
 
-# -----------------------------
+```
+# Build graph
+A_norm, n = build_graph()
 
-model = GCN(in_dim=d, hidden_dim=8, out_dim=2)
+# Feature dimension
+d = 4
+
+# Node features
+X = torch.randn(n, d)
+
+# Model
+model = GCN(in_dim=d, hidden_dim=8, out_dim=3)
 
 optimizer = optim.Adam(model.parameters(), lr=0.01)
 
-# Target (dummy "domain" output)
+# Dummy target (domain representation)
+target = torch.randn(n, 3)
 
-target = torch.randn(n, 2)
-
-# -----------------------------
-
-# 4. Training (Learning Dynamics)
-
-# -----------------------------
-
-epochs = 100
+# Training
+epochs = 120
 
 for epoch in range(epochs):
-optimizer.zero_grad()
+    optimizer.zero_grad()
 
-```
-output = model(X, A)
+    output = model(X, A_norm)
 
-loss = ((output - target)**2).mean()
+    loss = torch.mean((output - target) ** 2)
 
-loss.backward()
-optimizer.step()
+    loss.backward()
+    optimizer.step()
 
-if epoch % 20 == 0:
-    print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
-```
+    if epoch % 20 == 0:
+        print(f"Epoch {epoch:03d} | Loss: {loss.item():.4f}")
 
-# -----------------------------
-
-# 5. Neural Activation → Action
-
-# -----------------------------
-
-def action_mapping(activation):
-# Simple mapping to action space
-return torch.tanh(activation)
-
+# Final output
 with torch.no_grad():
-activations = model(X, A)
-actions = action_mapping(activations)
+    activations = model(X, A_norm)
+    actions = action_mapping(activations)
 
-print("\nFinal Activations:")
+print("\n=== FINAL RESULTS ===")
+
+print("\nNode Activations (Internal State):")
 print(activations)
 
 print("\nActions (Observable Output):")
 print(actions)
 
-# -----------------------------
-
-# 6. Interpretation
-
-# -----------------------------
-
-print("\nInterpretation:")
+print("\n=== INTERPRETATION ===")
 print("Graph → Learning → Activation → Action")
-print("This demonstrates:")
-print("- Domain as graph")
-print("- Learning over structure")
-print("- Action as observable neural activation")
+print("This validates the AI meta-field concept.")
+```
+
+if **name** == "**main**":
+main()
+
+
